@@ -37,16 +37,17 @@ func MustNewListener(listenerConf RabbitListenerConf, handler ConsumeHandler) qu
 		log.Fatalf("failed to open a channel: %v", err)
 	}
 
+	err = channel.Qos(listenerConf.PrefetchCount, listenerConf.PrefetchSize, false)
+	if err != nil {
+		log.Fatalf("failed to set QoS parameters, error: %v", err)
+	}
+
 	listener.channel = channel
 	return listener
 }
 
 func (q RabbitListener) Start() {
 	for _, que := range q.queues.ListenerQueues {
-		err := q.channel.Qos(que.PrefetchCount, que.PrefetchSize, false)
-		if err != nil {
-			log.Fatalf("failed to listener, error: %v", err)
-		}
 		msg, err := q.channel.Consume(
 			que.Name,
 			"",
